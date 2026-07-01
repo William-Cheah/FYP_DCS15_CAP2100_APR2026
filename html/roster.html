@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentinel-Eye | Employee Roster</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <!-- PDF Generator Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <!-- Chart.js for personal violation trend chart in modal -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+</head>
+<body>
+
+    <div class="dashboard-container">
+        <div id="sidebar-container"></div> 
+        
+        <div class="main-content">
+            <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+                <h2>Employee Safety Roster</h2>
+                
+                <!-- 升级 1：搜索框 + 状态筛选器 (Search + Status Filter) -->
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <input type="text" id="search-input" placeholder="Search employee name..."
+                           style="width: 250px; padding: 10px 15px; border-radius: 20px; border: 1px solid #334155; background: #1e293b; color: white; outline: none;">
+
+                    <select id="status-filter" class="filter-select">
+                        <option value="all">All Status</option>
+                        <option value="good">Good (70-100 pts)</option>
+                        <option value="warning">Warning (40-69 pts)</option>
+                        <option value="danger">Danger (0-39 pts)</option>
+                    </select>
+
+                    <select id="pattern-filter" class="filter-select">
+                        <option value="all">All Patterns</option>
+                        <option value="Consistent Violator">Consistent Violator</option>
+                        <option value="Chronic Underperformer">Chronic Underperformer</option>
+                        <option value="Regression">Regression</option>
+                        <option value="Sporadic">Sporadic</option>
+                        <option value="Monitoring">Monitoring</option>
+                        <option value="Improved">Improved</option>
+                        <option value="Compliant">Compliant</option>
+                    </select>
+                </div>
+            </header>
+            
+            <p style="color:#64748b; font-size:0.85em; margin-bottom:12px;">Initial score is 100 pts · 15 pts deducted per violation · Click column headers to sort</p>
+
+            <div class="roster-table-wrapper">
+                <table class="roster-table">
+                    <thead>
+                        <tr>
+                            <th onclick="sortRoster('index')">#</th>
+                            <th onclick="sortRoster('name')">Employee </th>
+                            <th onclick="sortRoster('score')">Score </th>
+                            <th onclick="sortRoster('violations')">Violations </th>
+                            <th>Status</th>
+                            <th>Badges / Flags</th>
+                            <th onclick="sortRoster('reward_points')">Reward Pts </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="roster-container">
+                        <tr><td colspan="8" style="text-align:center; color:#64748b; padding:30px;">Syncing data from cloud...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- 升级 2：弹窗内部的筛选器 (Modal Inner Filters) -->
+    <div id="photo-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: #1e293b; width: 80%; max-width: 900px; border-radius: 12px; padding: 20px; border: 1px solid #334155; max-height: 90vh; display: flex; flex-direction: column;">
+            
+            <!-- ── Unified modal header: one filter set controls BOTH chart and photos ── -->
+            <div style="border-bottom: 1px solid #334155; padding-bottom: 12px; margin-bottom: 15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <h3 id="modal-title" style="color: white; margin: 0;">Violation Archive</h3>
+                    <button onclick="closeModal()" style="background:none; border:none; color:#ef4444; font-size:1.5rem; cursor:pointer;">×</button>
+                </div>
+                <!-- Shared filter row -->
+                <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px; align-items:center;">
+                    <label style="font-size:0.78em; color:#64748b;">Filter:</label>
+
+                    <!-- Type filter — controls chart line colour AND photo grid type -->
+                    <select id="modal-type-filter" class="filter-select" style="padding:5px 10px;" onchange="applyModalFilters()">
+                        <option value="all">All Types</option>
+                        <option value="No Helmet">No Helmet</option>
+                        <option value="No Vest">No Vest</option>
+                        <option value="No Helmet &amp; No Vest">No Helmet &amp; No Vest</option>
+                    </select>
+
+                    <!-- Date range filter — controls chart time window AND photo grid date window -->
+                    <select id="modal-date-range" class="filter-select" style="padding:5px 10px;" onchange="applyModalFilters()">
+                        <option value="7">Last 7 Days</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90" selected>Last 90 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+
+                    <!-- Sort order — only affects photo grid display order -->
+                    <select id="modal-sort-order" class="filter-select" style="padding:5px 10px;" onchange="applyModalFilters()">
+                        <option value="newest">Newest First</option>
+                        <option value="oldest">Oldest First</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Personal violation trend chart — Feature 3
+                 Reference: ISO 45001:2018 Clause 9.1 — individual performance trend monitoring
+                 Reads unified filters from header (no duplicate dropdowns here). -->
+            <div id="modal-trend-section" style="margin-bottom: 15px; background:#0f172a; border-radius:8px; padding:15px;">
+                <h4 style="color:#cbd5e1; margin:0 0 10px 0; font-size:0.9em;">Personal Violation Trend</h4>
+                <div style="position:relative; height:160px;">
+                    <canvas id="modalTrendChart"></canvas>
+                </div>
+                <p id="modal-trend-nodata" style="display:none; color:#94a3b8; text-align:center; padding:12px; margin:0;">
+                    No violations in this period.
+                </p>
+            </div>
+
+            <div id="modal-photo-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 15px; overflow-y: auto; flex: 1;">
+                <!-- Photos go here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Pattern popup modal ─────────────────────────────────────────────── -->
+    <!-- Shows a single employee's 12-month violation heatmap + pattern label.  -->
+    <!-- Triggered by the "Pattern" button on each roster row.                  -->
+    <div id="pattern-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:2000; justify-content:center; align-items:center;">
+        <div style="background:#1e293b; width:90%; max-width:620px; border-radius:12px; padding:24px; border:1px solid #334155;">
+
+            <!-- Header -->
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;">
+                <div>
+                    <h3 id="pattern-modal-title" style="color:#e2e8f0; margin:0 0 4px 0; font-size:1.05em;"></h3>
+                    <div id="pattern-modal-sub" style="font-size:0.78em; color:#64748b;"></div>
+                </div>
+                <button onclick="closePatternModal()" style="background:none; border:none; color:#ef4444; font-size:1.5rem; cursor:pointer; line-height:1; padding:0 4px;">×</button>
+            </div>
+
+            <!-- Pattern label badge -->
+            <div id="pattern-badge" style="margin-bottom:18px;"></div>
+
+            <!-- Monthly heatmap grid (Jan–Dec) -->
+            <div id="pattern-grid" style="margin-bottom:20px;"></div>
+
+            <!-- Legend -->
+            <div style="display:flex; gap:12px; flex-wrap:wrap; margin-bottom:16px; font-size:0.72em; color:#64748b;">
+                <span><span style="display:inline-block; width:12px; height:12px; background:#1e293b; border:1px solid #334155; border-radius:2px; margin-right:4px; vertical-align:middle;"></span>0 violations</span>
+                <span><span style="display:inline-block; width:12px; height:12px; background:#c2410c; border-radius:2px; margin-right:4px; vertical-align:middle;"></span>1–2</span>
+                <span><span style="display:inline-block; width:12px; height:12px; background:#b91c1c; border-radius:2px; margin-right:4px; vertical-align:middle;"></span>3–4</span>
+                <span><span style="display:inline-block; width:12px; height:12px; background:#7f1d1d; border-radius:2px; margin-right:4px; vertical-align:middle;"></span>5+</span>
+                <span style="color:#3b82f6; border:1px solid #3b82f6; padding:0 3px; border-radius:2px;">0</span> Join month
+                <span style="color:#64748b;">✕</span> Before employment
+            </div>
+
+            <!-- Training email button (only shown for flagged patterns) -->
+            <div id="pattern-train-btn"></div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/roster.js"></script>
+    <script type="module" src="../js/sidebar.js"></script>
+</body>
+</html>

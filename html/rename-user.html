@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rename Firestore User Document</title>
+    <style>
+        body { font-family: monospace; background: #0f172a; color: #e2e8f0; padding: 40px; }
+        h2 { color: #38bdf8; }
+        .row { display: flex; gap: 12px; align-items: center; margin-bottom: 14px; }
+        input { background: #1e293b; border: 1px solid #334155; color: #e2e8f0;
+                padding: 8px 12px; border-radius: 6px; font-size: 1em; width: 200px; }
+        button { padding: 9px 20px; background: #3b82f6; color: white; border: none;
+                 border-radius: 6px; cursor: pointer; font-size: 1em; font-weight: bold; }
+        button:hover { background: #2563eb; }
+        #log { margin-top: 24px; background: #1e293b; border-radius: 8px; padding: 16px;
+               min-height: 60px; font-size: 0.9em; line-height: 1.8; white-space: pre-wrap; }
+        .ok  { color: #10b981; }
+        .err { color: #ef4444; }
+        .add-btn { background: #10b981; margin-top: 8px; }
+        .add-btn:hover { background: #059669; }
+        #pairs { margin-bottom: 16px; }
+        .pair { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+        .pair span { color: #94a3b8; }
+        .remove-btn { background: #ef4444; padding: 4px 10px; font-size: 0.8em; }
+    </style>
+</head>
+<body>
+    <h2>Rename Firestore User Documents</h2>
+    <p style="color:#94a3b8; font-size:0.85em;">
+        Copies the document data to the new ID, then deletes the old one.<br>
+        Use this to fix document names like <code>Wei_Liang</code> <code>EMP001</code>.
+    </p>
+
+    <div id="pairs">
+        <div class="pair">
+            <input class="old-id" placeholder="Old ID (e.g. Wei_Liang)">
+            <span></span>
+            <input class="new-id" placeholder="New ID (e.g. EMP001)">
+            <button class="remove-btn" onclick="this.parentElement.remove()"></button>
+        </div>
+    </div>
+
+    <button class="add-btn" onclick="addRow()">+ Add another rename</button>
+    <br><br>
+    <button onclick="runRename()">Run Rename</button>
+
+    <div id="log">Output will appear here…</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, deleteDoc }
+    from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword }
+    from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyADjUxwb0RI1GnEszGF9U6c2q2AhM37gFU",
+    authDomain:        "fyp-sentinel-eye.firebaseapp.com",
+    projectId:         "fyp-sentinel-eye",
+    storageBucket:     "fyp-sentinel-eye.firebasestorage.app",
+    messagingSenderId: "850393067962",
+    appId:             "1:850393067962:web:da732b54810071c1d7ad83",
+};
+
+const app  = initializeApp(firebaseConfig, 'rename-tool');
+const db   = getFirestore(app);
+const auth = getAuth(app);
+
+const log = document.getElementById('log');
+function out(msg, cls) {
+    const span = document.createElement('span');
+    span.className = cls || '';
+    span.textContent = msg + '\n';
+    log.appendChild(span);
+    log.scrollTop = log.scrollHeight;
+}
+
+window.addRow = function() {
+    const div = document.createElement('div');
+    div.className = 'pair';
+    div.innerHTML = `
+        <input class="old-id" placeholder="Old ID (e.g. Ya_Yuen)">
+        <span></span>
+        <input class="new-id" placeholder="New ID (e.g. EMP002)">
+        <button class="remove-btn" onclick="this.parentElement.remove()"></button>`;
+    document.getElementById('pairs').appendChild(div);
+};
+
+window.runRename = async function() {
+    log.innerHTML = '';
+    const pairs = [];
+    document.querySelectorAll('.pair').forEach(row => {
+        const oldId = row.querySelector('.old-id').value.trim();
+        const newId = row.querySelector('.new-id').value.trim();
+        if (oldId && newId) pairs.push({ oldId, newId });
+    });
+
+    if (pairs.length === 0) { out('No pairs entered.', 'err'); return; }
+
+    // Sign in as admin so Firestore rules allow read+write
+    const email    = prompt('Admin email:');
+    const password = prompt('Admin password:');
+    if (!email || !password) { out('Cancelled.', 'err'); return; }
+
+    try {
+        await signInWithEmailAndPassword(auth, email, password);
+        out('Signed in as admin.', 'ok');
+    } catch (e) {
+        out('Login failed: ' + e.message, 'err'); return;
+    }
+
+    for (const { oldId, newId } of pairs) {
+        out(`\nRenaming  "${oldId}"   "${newId}" …`);
+        try {
+            const oldRef = doc(db, 'users', oldId);
+            const newRef = doc(db, 'users', newId);
+
+            const snap = await getDoc(oldRef);
+            if (!snap.exists()) {
+                out(`  Document "${oldId}" not found — skipped.`, 'err');
+                continue;
+            }
+
+            const data = snap.data();
+
+            // Check new ID doesn't already exist
+            const existing = await getDoc(newRef);
+            if (existing.exists()) {
+                out(`  "${newId}" already exists — skipped to avoid overwrite.`, 'err');
+                continue;
+            }
+
+            await setDoc(newRef, data);
+            out(`  Copied data to "${newId}".`, 'ok');
+
+            await deleteDoc(oldRef);
+            out(`  Deleted old "${oldId}".`, 'ok');
+
+            out(`  Done: "${oldId}" "${newId}"`, 'ok');
+        } catch (e) {
+            out(`  Error: ${e.message}`, 'err');
+        }
+    }
+
+    out('\nAll renames complete.');
+};
+</script>
+</body>
+</html>

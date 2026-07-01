@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentinel-Eye | Reset Password</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box">
+            <h2>Sentinel-Eye Security</h2>
+            <p id="page-subtitle">Set your new password below.</p>
+
+            <!-- ── State: loading ─────────────────────────────────────────── -->
+            <div id="state-loading" style="color:#94a3b8; font-size:0.9em; padding:16px 0;">
+                Verifying your reset link…
+            </div>
+
+            <!-- ── State: invalid / expired link ─────────────────────────── -->
+            <div id="state-invalid" style="display:none;">
+                <div style="background:#450a0a; border:1px solid #ef4444; border-radius:8px;
+                            padding:14px 16px; font-size:0.85em; color:#fca5a5; margin-bottom:16px;">
+                    <strong>This reset link is invalid or has expired.</strong><br>
+                    Please request a new password reset link from the login page.
+                </div>
+                <button onclick="window.location.href='login.html'">Back to Login</button>
+            </div>
+
+            <!-- ── State: set new password form ──────────────────────────── -->
+            <div id="state-form" style="display:none; text-align:left;">
+
+                <!-- Password rules reference -->
+                <p style="font-size:0.78em; color:#64748b; margin:0 0 14px 0; text-align:center;">
+                    NIST SP 800-63B §5.1.1.2 · OWASP Authentication Cheat Sheet (2023)
+                </p>
+
+                <!-- New password with live checklist -->
+                <div style="position:relative;">
+                    <input type="password" id="new-password"
+                           placeholder="New Password" autocomplete="new-password"
+                           oninput="updateChecklist(this.value)"
+                           style="margin-bottom:6px;">
+                    <button type="button" onclick="toggleVis('new-password', this)"
+                            class="pw-toggle-btn"></button>
+                </div>
+
+                <!-- Live requirements checklist -->
+                <div id="pw-checklist"
+                     style="background:#0f172a; border:1px solid #334155; border-radius:8px;
+                            padding:10px 14px; margin-bottom:10px; font-size:0.78em; line-height:2;">
+                    <div id="chk-upper"   style="color:#64748b;">At least one uppercase letter (A-Z)</div>
+                    <div id="chk-lower"   style="color:#64748b;">At least one lowercase letter (a-z)</div>
+                    <div id="chk-digit"   style="color:#64748b;">At least one number (0-9)</div>
+                    <div id="chk-special" style="color:#64748b;">At least one special character (@$!%*?&amp;_#-)</div>
+                    <div id="chk-length"  style="color:#64748b;">At least 8 characters</div>
+                </div>
+
+                <!-- Confirm password -->
+                <div style="position:relative;">
+                    <input type="password" id="confirm-password"
+                           placeholder="Confirm New Password" autocomplete="new-password"
+                           style="margin-top:0;">
+                    <button type="button" onclick="toggleVis('confirm-password', this)"
+                            class="pw-toggle-btn"></button>
+                </div>
+
+                <p id="form-error" class="error-text" style="min-height:18px; font-size:0.85em;"></p>
+
+                <button id="submit-btn" onclick="submitReset()" style="margin-top:6px;">
+                    Set New Password
+                </button>
+            </div>
+
+            <!-- ── State: success ─────────────────────────────────────────── -->
+            <div id="state-success" style="display:none;">
+                <div style="background:#052e16; border:1px solid #10b981; border-radius:8px;
+                            padding:14px 16px; font-size:0.85em; color:#6ee7b7; margin-bottom:16px;">
+                    <strong>Password updated successfully!</strong><br>
+                    You can now log in with your new password.
+                </div>
+                <button onclick="window.location.href='login.html'">Go to Login</button>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+    /**
+     * reset-action.html — Custom Firebase Password Reset Handler
+     *
+     * Firebase's default reset page does not enforce password strength rules.
+     * This custom page intercepts the oobCode from the reset link URL,
+     * validates the code via Firebase, enforces all 5 password rules,
+     * then calls confirmPasswordReset() to apply the new password.
+     *
+     * Setup required (one-time, in Firebase Console):
+     *   Authentication Templates Password Reset Edit Action URL:
+     *   http://localhost/FYP/html/reset-action.html
+     *
+     * References:
+     *   NIST SP 800-63B §5.1.1.2 — Memorized Secret password rules
+     *   OWASP Authentication Cheat Sheet (2023)
+     *   Firebase Auth — confirmPasswordReset() API
+     */
+
+    import { initializeApp }         from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, verifyPasswordResetCode, confirmPasswordReset }
+        from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey:            "AIzaSyADjUxwb0RI1GnEszGF9U6c2q2AhM37gFU",
+        authDomain:        "fyp-sentinel-eye.firebaseapp.com",
+        projectId:         "fyp-sentinel-eye",
+        storageBucket:     "fyp-sentinel-eye.firebasestorage.app",
+        messagingSenderId: "850393067962",
+        appId:             "1:850393067962:web:da732b54810071c1d7ad83",
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // ── Extract oobCode from URL ──────────────────────────────────────────────
+    const params  = new URLSearchParams(window.location.search);
+    const oobCode = params.get('oobCode');
+    const mode    = params.get('mode');
+
+    // ── Verify the code on page load ─────────────────────────────────────────
+    async function init() {
+        if (!oobCode || mode !== 'resetPassword') {
+            showState('invalid');
+            return;
+        }
+        try {
+            await verifyPasswordResetCode(auth, oobCode);
+            showState('form');
+        } catch (err) {
+            console.warn('Reset code invalid:', err);
+            showState('invalid');
+        }
+    }
+
+    function showState(name) {
+        ['loading', 'invalid', 'form', 'success'].forEach(s => {
+            const el = document.getElementById(`state-${s}`);
+            if (el) el.style.display = (s === name) ? 'block' : 'none';
+        });
+    }
+
+    // ── Password rule checker ─────────────────────────────────────────────────
+    function validatePassword(pw) {
+        if (!pw || pw.length < 8)       return 'Password must be at least 8 characters.';
+        if (pw.length > 64)              return 'Password must be 64 characters or fewer.';
+        if (!/[A-Z]/.test(pw))           return 'Password must include at least one uppercase letter (A-Z).';
+        if (!/[a-z]/.test(pw))           return 'Password must include at least one lowercase letter (a-z).';
+        if (!/\d/.test(pw))              return 'Password must include at least one number (0-9).';
+        if (!/[@$!%*?&_#\-]/.test(pw))  return 'Password must include at least one special character (@$!%*?&_#-).';
+        return null;
+    }
+
+    // ── Live checklist (called by oninput on the password field) ─────────────
+    window.updateChecklist = function(pw) {
+        const rules = [
+            { id: 'chk-upper',   pass: /[A-Z]/.test(pw),         ok: 'At least one uppercase letter (A-Z)',        fail: 'At least one uppercase letter (A-Z)' },
+            { id: 'chk-lower',   pass: /[a-z]/.test(pw),         ok: 'At least one lowercase letter (a-z)',        fail: 'At least one lowercase letter (a-z)' },
+            { id: 'chk-digit',   pass: /\d/.test(pw),            ok: 'At least one number (0-9)',                  fail: 'At least one number (0-9)' },
+            { id: 'chk-special', pass: /[@$!%*?&_#\-]/.test(pw), ok: 'At least one special character (@$!%*?&_#-)', fail: 'At least one special character (@$!%*?&_#-)' },
+            { id: 'chk-length',  pass: pw.length >= 8,           ok: 'At least 8 characters',                      fail: 'At least 8 characters' },
+        ];
+        rules.forEach(r => {
+            const el = document.getElementById(r.id);
+            if (!el) return;
+            el.textContent  = r.pass ? r.ok : r.fail;
+            el.style.color  = r.pass ? '#10b981' : '#64748b';
+        });
+    };
+
+    // ── Toggle password visibility ────────────────────────────────────────────
+    window.toggleVis = function(inputId, btn) {
+        const inp = document.getElementById(inputId);
+        if (inp.type === 'password') { inp.type = 'text';     btn.textContent = ''; }
+        else                         { inp.type = 'password'; btn.textContent = ''; }
+    };
+
+    // ── Submit new password ───────────────────────────────────────────────────
+    window.submitReset = async function() {
+        const newPw   = document.getElementById('new-password').value;
+        const confirm = document.getElementById('confirm-password').value;
+        const errEl   = document.getElementById('form-error');
+        const btn     = document.getElementById('submit-btn');
+        errEl.textContent = '';
+
+        // Client-side validation (NIST SP 800-63B)
+        const pwErr = validatePassword(newPw);
+        if (pwErr) { errEl.textContent = pwErr; return; }
+        if (newPw !== confirm) { errEl.textContent = 'Passwords do not match.'; return; }
+
+        btn.textContent = 'Saving...';
+        btn.disabled    = true;
+
+        try {
+            await confirmPasswordReset(auth, oobCode, newPw);
+            showState('success');
+        } catch (err) {
+            console.error('confirmPasswordReset error:', err);
+            const msg =
+                err.code === 'auth/expired-action-code'  ? 'This reset link has expired. Please request a new one.' :
+                err.code === 'auth/invalid-action-code'  ? 'This reset link is invalid or already used.' :
+                err.code === 'auth/weak-password'        ? 'Password rejected by server. Please choose a stronger password.' :
+                'Failed to reset password. Please try again.';
+            errEl.textContent = msg;
+            btn.textContent = 'Set New Password';
+            btn.disabled    = false;
+        }
+    };
+
+    // Start
+    init();
+    </script>
+</body>
+</html>

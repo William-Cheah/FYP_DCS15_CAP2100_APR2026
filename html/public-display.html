@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel-Eye | Site Entrance Display</title>
+    <link rel="stylesheet" href="../css/public-display.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-logo">
+            <span></span> Sentinel-Eye Safety System
+        </div>
+        <div id="clock" class="header-clock">--:--:--</div>
+        <div class="status-badge" id="status-badge">System Active</div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+
+        <!-- Live camera feed -->
+        <div class="feed-section">
+            <h2><span class="rec-dot"></span>Live Safety Monitor</h2>
+            <div class="camera-frame">
+                <!-- Stream URL uses the same host that served this page,
+                     so it works both locally (127.0.0.1) and from a
+                     teammate's laptop on the same WiFi (192.168.x.x) -->
+                <img id="cam-stream" alt="Live Camera Feed"
+                     onerror="setTimeout(()=>{ const h=window.location.hostname||'127.0.0.1'; this.src=`http://${h}:5050/stream?t=`+Date.now(); }, 2000)" />
+                <script>
+                    setInterval(() => {
+                        const img = document.getElementById('cam-stream');
+                        if (img && img.naturalWidth === 0) {
+                            const h = window.location.hostname || '127.0.0.1';
+                            img.src = `http://${h}:5050/stream?t=` + Date.now();
+                        }
+                    }, 10000);
+                </script>
+                <div class="camera-label">CAM-01 · Main Entrance</div>
+            </div>
+        </div>
+
+        <!-- Site info panel -->
+        <div class="info-section">
+            <div class="site-info">
+                <h1>Welcome to the Construction Site</h1>
+                <p>All personnel must be registered and wear full PPE at all times.<br>
+                   Violations are automatically recorded by the AI monitoring system.</p>
+            </div>
+
+            <div class="rules-box">
+                <h3>Mandatory PPE Requirements</h3>
+                <div class="rule-item">
+                    <span class="rule-icon"></span>
+                    <span>Safety helmet must be worn at all times on site</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon"></span>
+                    <span>High-visibility safety vest must be worn at all times</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon"></span>
+                    <span>All personnel must be registered and face-verified</span>
+                </div>
+                <div class="rule-item">
+                    <span class="rule-icon"></span>
+                    <span>Visitors must report to the Security Office before entering</span>
+                </div>
+            </div>
+
+            <div class="contact-box">
+                <h3>Site Contacts</h3>
+                <div class="contact-item"><strong>Security Office</strong> — Block A, Level 1</div>
+                <div class="contact-item"><strong>Safety Officer</strong> — Ext. 1023</div>
+                <div class="contact-item"><strong>Site Manager</strong> — Ext. 1001</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PPE Violation Alert Overlay (known employee, missing PPE) -->
+    <div class="ppe-overlay" id="ppe-overlay">
+        <div class="alert-icon"></div>
+        <div class="ppe-emp-name" id="ppe-emp-name">Employee</div>
+        <div class="ppe-title">PPE Violation Detected!</div>
+        <div class="ppe-items" id="ppe-items">
+            <!-- filled dynamically -->
+        </div>
+        <div class="ppe-note">
+            Please put on the required PPE before entering the site.<br>
+            This violation has been recorded by the system.
+        </div>
+        <div class="ppe-countdown" id="ppe-countdown-text">This alert will close in 8 seconds</div>
+        <div class="ppe-bar-wrap">
+            <div class="ppe-bar-fill" id="ppe-bar" style="width:100%;"></div>
+        </div>
+    </div>
+
+    <!-- Unknown Person Alert Overlay -->
+    <div class="alert-overlay" id="alert-overlay">
+        <div class="alert-icon"></div>
+        <div class="alert-title">Unrecognised Person Detected</div>
+        <div class="alert-subtitle">
+            You are not registered in the Sentinel-Eye system.<br>
+            Please follow the steps below before entering the site.
+        </div>
+        <div class="alert-instruction">
+            <div class="step">1<strong>Stop</strong> — do not proceed further into the site</div>
+            <div class="step">2Proceed to the <strong>Security Office — Block A, Level 1</strong></div>
+            <div class="step">3Present your <strong>identification (IC / Passport / Staff Card)</strong></div>
+            <div class="step">4Complete the <strong>face registration</strong> with the site officer</div>
+        </div>
+        <div class="alert-countdown" id="alert-countdown-text">This alert will close in 10 seconds</div>
+        <div class="countdown-bar-wrap">
+            <div class="countdown-bar-fill" id="alert-bar" style="width:100%;"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getFirestore, collection, onSnapshot, query, orderBy, limit }
+            from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+        // ── Firebase config (same as firebase-config.js) ───────────────────────
+        const firebaseConfig = {
+            apiKey:            "AIzaSyADjUxwb0RI1GnEszGF9U6c2q2AhM37gFU",
+            authDomain:        "fyp-sentinel-eye.firebaseapp.com",
+            projectId:         "fyp-sentinel-eye",
+            storageBucket:     "fyp-sentinel-eye.firebasestorage.app",
+            messagingSenderId: "850393067962",
+            appId:             "1:850393067962:web:da732b54810071c1d7ad83",
+        };
+        const app = initializeApp(firebaseConfig);
+        const db  = getFirestore(app);
+
+        // ── Camera stream — use same host IP that served this page ───────────
+        // This means the stream works from any device on the same network:
+        //   • Your own laptop:     window.location.hostname = 127.0.0.1 or localhost
+        //   • Teammate's laptop:   window.location.hostname = 192.168.x.x (your IP)
+        const streamHost = window.location.hostname || '127.0.0.1';
+        document.getElementById('cam-stream').src = `http://${streamHost}:5050/stream`;
+
+        // ── Clock ──────────────────────────────────────────────────────────────
+        function updateClock() {
+            document.getElementById('clock').textContent =
+                new Date().toLocaleTimeString('en-MY', { hour12: false });
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+
+        // ── Alert logic ────────────────────────────────────────────────────────
+        const overlay   = document.getElementById('alert-overlay');
+        const barEl     = document.getElementById('alert-bar');
+        const countText = document.getElementById('alert-countdown-text');
+        let alertTimer  = null;
+        let isInitial   = true;
+
+        function showAlert() {
+            // Don't interrupt a PPE violation alert for a known employee
+            if (ppeOverlay.classList.contains('visible')) return;
+            if (alertTimer) { clearInterval(alertTimer); alertTimer = null; }
+            overlay.classList.add('visible');
+            barEl.style.transition = 'none';
+            barEl.style.width = '100%';
+
+            let remaining = 10;
+            countText.textContent = `This alert will close in ${remaining} seconds`;
+
+            // Start bar shrink after a tick so the transition resets properly
+            setTimeout(() => {
+                barEl.style.transition = `width 10s linear`;
+                barEl.style.width = '0%';
+            }, 50);
+
+            alertTimer = setInterval(() => {
+                remaining--;
+                countText.textContent = `This alert will close in ${remaining} seconds`;
+                if (remaining <= 0) {
+                    clearInterval(alertTimer);
+                    alertTimer = null;
+                    overlay.classList.remove('visible');
+                }
+            }, 1000);
+        }
+
+        // ── PPE violation alert logic ─────────────────────────────────────────
+        const ppeOverlay   = document.getElementById('ppe-overlay');
+        const ppeEmpName   = document.getElementById('ppe-emp-name');
+        const ppeItems     = document.getElementById('ppe-items');
+        const ppeBar       = document.getElementById('ppe-bar');
+        const ppeCountText = document.getElementById('ppe-countdown-text');
+        let ppeTimer = null;
+
+        function showPpeAlert(empName, violation) {
+            if (ppeTimer) { clearInterval(ppeTimer); ppeTimer = null; }
+            // PPE violation for a known employee takes priority —
+            // dismiss the Unknown overlay if it is currently showing
+            if (alertTimer) { clearInterval(alertTimer); alertTimer = null; }
+            overlay.classList.remove('visible');
+
+            ppeEmpName.textContent = `${empName}`;
+            ppeItems.innerHTML = '';
+
+            // Build the list of what's missing + calculate deduction
+            const missing = [];
+            if (violation === 'No Helmet & No Vest') {
+                missing.push('Safety Helmet');
+                missing.push('High-Visibility Vest');
+            } else if (violation.includes('Helmet')) {
+                missing.push('Safety Helmet');
+            } else if (violation.includes('Vest')) {
+                missing.push('High-Visibility Vest');
+            } else {
+                missing.push(`${violation}`);
+            }
+            const deduction = violation === 'No Helmet & No Vest' ? 30 : 15;
+
+            missing.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'ppe-item';
+                div.innerHTML = `<strong>${item}</strong> — must be worn before entering`;
+                ppeItems.appendChild(div);
+            });
+
+            // Show deduction notice
+            const deductDiv = document.createElement('div');
+            deductDiv.className = 'ppe-item';
+            deductDiv.style.marginTop = '8px';
+            deductDiv.style.color = '#fca5a5';
+            deductDiv.innerHTML = `<strong>${deduction} safety points deducted</strong> from your score`;
+            ppeItems.appendChild(deductDiv);
+
+            ppeOverlay.classList.add('visible');
+            ppeBar.style.transition = 'none';
+            ppeBar.style.width = '100%';
+
+            let remaining = 8;
+            ppeCountText.textContent = `This alert will close in ${remaining} seconds`;
+            setTimeout(() => {
+                ppeBar.style.transition = 'width 8s linear';
+                ppeBar.style.width = '0%';
+            }, 50);
+
+            ppeTimer = setInterval(() => {
+                remaining--;
+                ppeCountText.textContent = `This alert will close in ${remaining} seconds`;
+                if (remaining <= 0) {
+                    clearInterval(ppeTimer);
+                    ppeTimer = null;
+                    ppeOverlay.classList.remove('visible');
+                }
+            }, 1000);
+        }
+
+        // ── Firestore listener — watches detections for known employee PPE violations ──
+        const ppeQ = query(collection(db, 'detections'), orderBy('timestamp', 'desc'), limit(100));
+        let isPpeInitial = true;
+        onSnapshot(ppeQ, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added' && !isPpeInitial) {
+                    const data = change.doc.data();
+                    const isKnown = data.name && data.name !== 'Unknown'
+                                 && data.id   && data.id   !== 'Unknown';
+                    if (isKnown) {
+                        cancelUnknownAlert();   // known employee identified — suppress pending unknown popup
+                        showPpeAlert(data.name, data.violation);
+                    }
+                }
+            });
+            isPpeInitial = false;
+        });
+
+        // ── Unknown alert — 5-second queue before showing popup ──────────────
+        // When unknown_alerts fires, we wait 5 seconds before showing the popup.
+        // If a known employee PPE violation comes in during those 5 seconds,
+        // the unknown popup is suppressed (same logic as ai_engine.py backend).
+        let unknownPendingTimer = null;
+
+        function queueUnknownAlert() {
+            // Only one pending timer at a time
+            if (unknownPendingTimer) return;
+            unknownPendingTimer = setTimeout(() => {
+                unknownPendingTimer = null;
+                showAlert();   // genuinely unknown after 5s — show popup
+            }, 5000);
+        }
+
+        function cancelUnknownAlert() {
+            if (unknownPendingTimer) {
+                clearTimeout(unknownPendingTimer);
+                unknownPendingTimer = null;
+                console.log('Unknown alert suppressed — known employee detected');
+            }
+        }
+
+        const q = query(collection(db, 'unknown_alerts'), orderBy('timestamp', 'desc'), limit(20));
+        onSnapshot(q, (snapshot) => {
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added' && !isInitial) {
+                    queueUnknownAlert();
+                }
+            });
+            isInitial = false;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,312 @@
+/* Styles for public-display.html — Sentinel-Eye entrance screen */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #020617;
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* ── Header ── */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 28px;
+            background: #0f172a;
+            border-bottom: 2px solid #1e3a5f;
+            flex-shrink: 0;
+        }
+        .header-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.3em;
+            font-weight: 700;
+            color: #e2e8f0;
+        }
+        .header-logo span { font-size: 1.6em; }
+        .header-clock {
+            font-size: 1.1em;
+            color: #94a3b8;
+            font-variant-numeric: tabular-nums;
+        }
+        .status-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            background: #052e16;
+            color: #10b981;
+            border: 1px solid #10b981;
+        }
+
+        /* ── Main layout ── */
+        .main {
+            display: flex;
+            flex: 1;
+            gap: 0;
+            overflow: hidden;
+        }
+
+        /* ── Camera feed ── */
+        .feed-section {
+            flex: 1.4;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: #020617;
+        }
+        .feed-section h2 {
+            color: #64748b;
+            font-size: 0.85em;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .camera-frame {
+            position: relative;
+            width: 100%;
+            max-width: 680px;
+            border: 2px solid #1e3a5f;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #0f172a;
+        }
+        .camera-frame img {
+            width: 100%;
+            display: block;
+        }
+        .camera-label {
+            position: absolute;
+            top: 10px;
+            left: 14px;
+            background: rgba(2,6,23,0.75);
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 0.75em;
+            color: #94a3b8;
+            letter-spacing: 0.08em;
+        }
+        .rec-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            background: #ef4444;
+            border-radius: 50%;
+            margin-right: 6px;
+            animation: blink 1.2s infinite;
+        }
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+        /* ── Info panel ── */
+        .info-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 30px 28px;
+            background: #0a0f1a;
+            border-left: 1px solid #1e293b;
+            gap: 24px;
+        }
+
+        .site-info h1 {
+            font-size: 1.6em;
+            color: #e2e8f0;
+            margin-bottom: 8px;
+        }
+        .site-info p {
+            color: #64748b;
+            font-size: 0.88em;
+            line-height: 1.6;
+        }
+
+        .rules-box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 18px;
+        }
+        .rules-box h3 {
+            color: #94a3b8;
+            font-size: 0.78em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 0;
+            border-bottom: 1px solid #1e293b;
+            font-size: 0.88em;
+            color: #cbd5e1;
+        }
+        .rule-item:last-child { border-bottom: none; }
+        .rule-icon { font-size: 1.2em; flex-shrink: 0; }
+
+        .contact-box {
+            background: #0f172a;
+            border: 1px solid #1e293b;
+            border-radius: 10px;
+            padding: 16px 18px;
+        }
+        .contact-box h3 {
+            color: #94a3b8;
+            font-size: 0.78em;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+        .contact-item {
+            font-size: 0.87em;
+            color: #cbd5e1;
+            padding: 4px 0;
+        }
+        .contact-item strong { color: #e2e8f0; }
+
+        /* ── Unknown Person Alert overlay ── */
+        .alert-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2,6,23,0.88);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+            animation: fadeIn 0.3s ease;
+        }
+        .alert-overlay.visible { display: flex; }
+
+        @keyframes fadeIn { from{opacity:0;transform:scale(0.96)} to{opacity:1;transform:scale(1)} }
+
+        .alert-icon { font-size: 5em; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+
+        .alert-title {
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #fbbf24;
+            text-align: center;
+        }
+        .alert-subtitle {
+            font-size: 1.1em;
+            color: #fde68a;
+            text-align: center;
+            max-width: 520px;
+            line-height: 1.6;
+        }
+        .alert-instruction {
+            background: #1a0a00;
+            border: 2px solid #f59e0b;
+            border-radius: 14px;
+            padding: 24px 36px;
+            text-align: center;
+            max-width: 560px;
+        }
+        .alert-instruction .step {
+            font-size: 1em;
+            color: #fde68a;
+            padding: 8px 0;
+            border-bottom: 1px solid #2d1a00;
+            line-height: 1.5;
+        }
+        .alert-instruction .step:last-child { border-bottom: none; }
+        .alert-instruction .step strong { color: #fbbf24; }
+
+        .alert-countdown {
+            font-size: 0.85em;
+            color: #78350f;
+            margin-top: 8px;
+        }
+        .countdown-bar-wrap {
+            width: 300px;
+            height: 6px;
+            background: #1a0a00;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .countdown-bar-fill {
+            height: 100%;
+            background: #f59e0b;
+            border-radius: 3px;
+            transition: width 1s linear;
+        }
+
+        /* ── PPE Warning overlay (known employee, missing PPE) ── */
+        .ppe-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2,6,23,0.88);
+            z-index: 100;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+            animation: fadeIn 0.3s ease;
+        }
+        .ppe-overlay.visible { display: flex; }
+        .ppe-emp-name {
+            font-size: 1.6em;
+            font-weight: 700;
+            color: #e2e8f0;
+            text-align: center;
+        }
+        .ppe-title {
+            font-size: 2.2em;
+            font-weight: 800;
+            color: #f87171;
+            text-align: center;
+        }
+        .ppe-items {
+            background: #1a0505;
+            border: 2px solid #ef4444;
+            border-radius: 14px;
+            padding: 20px 36px;
+            text-align: center;
+            max-width: 520px;
+        }
+        .ppe-item {
+            font-size: 1.1em;
+            color: #fca5a5;
+            padding: 8px 0;
+            border-bottom: 1px solid #2d0a0a;
+        }
+        .ppe-item:last-child { border-bottom: none; }
+        .ppe-item strong { color: #f87171; }
+        .ppe-note {
+            font-size: 0.9em;
+            color: #94a3b8;
+            text-align: center;
+            max-width: 480px;
+            line-height: 1.6;
+        }
+        .ppe-countdown {
+            font-size: 0.85em;
+            color: #7f1d1d;
+            margin-top: 4px;
+        }
+        .ppe-bar-wrap {
+            width: 300px;
+            height: 6px;
+            background: #1a0505;
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .ppe-bar-fill {
+            height: 100%;
+            background: #ef4444;
+            border-radius: 3px;
+            transition: width 1s linear;
+        }

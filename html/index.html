@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel-Eye | Real-time Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+
+    
+</head>
+<body>
+    <div id="toast-container"></div>
+    <div class="dashboard-container">
+
+        <div id="sidebar-container"></div>
+
+        <main class="main-content">
+            <header>
+                <h1>Live Alert Feed</h1>
+                <div style="color: #cbd5e1;">Status: <span class="live-dot"></span> Live Monitoring</div>
+            </header>
+
+            <!-- === 新增：双栏主布局 === -->
+            <div class="dashboard-grid">
+                
+                <!-- 左栏：实时监控 -->
+                <div class="live-video-section panel-box">
+                    <h2>Real-time Live Feed</h2>
+                    <div class="video-container">
+                        <!-- Flask video stream -->
+                        <img id="live-stream" src="http://127.0.0.1:5050/stream" alt="Live Camera Feed"
+                             onerror="setTimeout(()=>{ this.src='http://127.0.0.1:5050/stream?t='+Date.now(); }, 2000)">
+                        <script>
+                            // Watchdog: if the stream stalls silently (no onerror fired),
+                            // force a reconnect every 10 seconds by checking naturalWidth.
+                            setInterval(() => {
+                                const img = document.getElementById('live-stream');
+                                if (img && img.naturalWidth === 0) {
+                                    img.src = 'http://127.0.0.1:5050/stream?t=' + Date.now();
+                                }
+                            }, 10000);
+                        </script>
+
+                        <!-- ── Scenario B: Photo Countdown Overlay ──────────────
+                             Sits inside the camera frame at 80% opacity so the
+                             live feed is still faintly visible behind it.
+                             dashboard.js shows this when redirected from
+                             register.html with ?countdown=1&empId=...&empName=...
+                        ─────────────────────────────────────────────────────── -->
+                        <div id="countdown-overlay"
+                             style="display:none; position:absolute; inset:0; z-index:10;
+                                    background:rgba(2,6,23,0.80);
+                                    flex-direction:column; justify-content:center;
+                                    align-items:center; text-align:center;
+                                    border-radius:6px;">
+
+                            <div style="background:rgba(5,46,22,0.9); border:1px solid #10b981;
+                                        border-radius:8px; padding:8px 18px; margin-bottom:14px;
+                                        font-size:0.82em; color:#6ee7b7; letter-spacing:0.5px;">
+                                Registration successful — preparing face capture
+                            </div>
+
+                            <div style="font-size:0.95em; color:#38bdf8; font-weight:700;
+                                        letter-spacing:2px; text-transform:uppercase; margin-bottom:6px;">
+                                Get Ready for Face Capture
+                            </div>
+
+                            <div id="countdown-name"
+                                 style="font-size:0.8em; color:#94a3b8; margin-bottom:12px;"></div>
+
+                            <div id="countdown-step"
+                                 style="font-size:0.88em; color:#38bdf8; font-weight:600;
+                                        margin-bottom:12px; letter-spacing:0.4px; text-align:center;"></div>
+
+                            <div id="countdown-number"
+                                 style="font-size:6em; font-weight:900; color:#38bdf8; line-height:1;
+                                        text-shadow:0 0 30px rgba(56,189,248,0.7);
+                                        transition:transform 0.15s ease, opacity 0.15s ease;">
+                                5
+                            </div>
+
+                            <div style="margin-top:14px; font-size:0.8em; color:#94a3b8; line-height:1.6;">
+                                Hold your position until the photo is taken.
+                            </div>
+
+                            <div style="margin-top:18px; width:200px; height:5px;
+                                        background:rgba(30,41,59,0.8); border-radius:99px; overflow:hidden;">
+                                <div id="countdown-bar"
+                                     style="height:100%; width:100%; background:#38bdf8;
+                                            border-radius:99px; transition:width 1s linear;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- 新增：Web 控制台 (Control Panel) -->
+                    <div class="camera-controls" style="margin-top: 15px; display: flex; gap: 10px; background: #0f172a; padding: 15px; border-radius: 8px;">
+                        <button onclick="sendSystemCommand('DETECTING')" style="flex:1; padding: 10px; background: #10b981; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">RESUME (Detecting)</button>
+                        <button onclick="sendSystemCommand('PAUSED')" style="flex:1; padding: 10px; background: #f59e0b; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">PAUSE</button>
+                        <button onclick="sendSystemCommand('STANDBY')" style="flex:1; padding: 10px; background: #ef4444; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold;">STANDBY (Stop)</button>
+                    </div>
+                    <div class="camera-info">
+                        <span><i class="fas fa-video"></i> Cam-01: Main Entrance</span>
+                        <span style="color: #10b981;">Online</span>
+                    </div>
+                </div>
+
+                <!-- 右栏：历史警报 (取代了原来的全屏网格) -->
+                <div class="alert-history-section panel-box">
+                    <h2>Recent Violations</h2>
+                    <!-- 保留你的 ID，让 JS 继续在这里生成卡片 -->
+                    <div id="alert-feed" class="alert-list">
+                        <!-- JS 会自动把卡片塞到这里 -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../js/dashboard.js"></script>
+    <script type="module" src="../js/sidebar.js"></script>
+</body>
+</html>

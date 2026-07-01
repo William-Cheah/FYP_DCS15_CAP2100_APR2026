@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentinel-Eye | Unknown Faces</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div class="dashboard-container">
+    <div id="sidebar-container"></div>
+
+    <div class="main-content">
+        <header style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; flex-wrap:wrap; gap:15px;">
+            <div>
+                <h2>Unknown Faces</h2>
+                <p style="color:#64748b; font-size:0.85em; margin:4px 0 0 0;">
+                    Violations detected but not matched to a registered employee.
+                    Identify the person and reassign the record — the employee's
+                    violation count and score will update automatically.
+                </p>
+            </div>
+            <span id="unk-count" style="color:#64748b; font-size:0.85em; white-space:nowrap;"></span>
+        </header>
+
+        <!-- Filter row -->
+        <div style="display:flex; gap:10px; flex-wrap:wrap; margin:16px 0; align-items:center;">
+            <select id="unk-type" class="filter-select">
+                <option value="all">All Types</option>
+                <option value="No Helmet">No Helmet</option>
+                <option value="No Vest">No Vest</option>
+            </select>
+            <select id="unk-date" class="filter-select">
+                <option value="7">Last 7 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90" selected>Last 90 Days</option>
+                <option value="all">All Time</option>
+            </select>
+        </div>
+
+        <!-- Photo grid of unknown violations -->
+        <div id="unk-grid" style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:16px;">
+            <p style="color:#64748b; grid-column:1/-1; text-align:center; padding:40px 0;">
+                Syncing data from cloud...
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- Reassign modal -->
+<div id="reassign-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.8);
+     z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:#1e293b; border:1px solid #334155; border-radius:12px;
+                padding:24px; width:90%; max-width:480px;">
+        <h3 style="color:white; margin:0 0 6px 0;">Reassign Violation</h3>
+        <p style="color:#64748b; font-size:0.82em; margin:0 0 16px 0;">
+            Select the employee this violation belongs to. Their score will be
+            deducted by 15 pts and violation count will increase.
+        </p>
+        <img id="reassign-photo" src="" style="width:100%; height:160px; object-fit:cover;
+             border-radius:8px; border:1px solid #334155; margin-bottom:14px;">
+        <div style="margin-bottom:12px;">
+            <label style="font-size:0.8em; color:#94a3b8; display:block; margin-bottom:4px;">
+                Violation Type
+            </label>
+            <div id="reassign-type" style="color:#ef4444; font-weight:600;"></div>
+        </div>
+        <div style="margin-bottom:16px;">
+            <label style="font-size:0.8em; color:#94a3b8; display:block; margin-bottom:6px;">
+                Assign to Employee
+            </label>
+            <!-- Search box filters the dropdown below -->
+            <input type="text" id="reassign-search" placeholder="Type to search employee..."
+                   oninput="filterReassignDropdown()"
+                   style="width:100%; padding:8px 12px; background:#0f172a; border:1px solid #334155;
+                          border-radius:7px; color:#e2e8f0; font-size:0.88em; outline:none;
+                          margin-bottom:6px; box-sizing:border-box;">
+            <select id="reassign-employee" class="filter-select" style="width:100%; border-radius:8px; max-height:180px;">
+                <option value="">— Select employee —</option>
+            </select>
+        </div>
+        <div style="display:flex; gap:10px; justify-content:flex-end;">
+            <button onclick="closeReassign()"
+                    style="padding:8px 20px; background:#334155; color:#e2e8f0;
+                           border:none; border-radius:8px; cursor:pointer;">Cancel</button>
+            <button onclick="confirmReassign()"
+                    style="padding:8px 20px; background:#3b82f6; color:white;
+                           border:none; border-radius:8px; cursor:pointer; font-weight:bold;">
+                Confirm Reassign
+            </button>
+        </div>
+    </div>
+</div>
+
+<script type="module" src="../js/unknown.js"></script>
+<script type="module" src="../js/sidebar.js"></script>
+</body>
+</html>

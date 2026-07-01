@@ -1,0 +1,157 @@
+/* css/auth.css - Sentinel-Eye */
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f172a;
+    color: #f8fafc;
+}
+
+.auth-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    min-height: 100vh;
+    background: radial-gradient(circle at center, #1e293b 0%, #020617 100%);
+}
+
+.auth-box, .register-box {
+    background-color: #1e293b;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    width: 100%;
+    max-width: 420px;
+    text-align: center;
+    border: 1px solid #334155;
+}
+
+.register-box {
+    max-width: 500px;
+}
+
+.auth-box h2, .register-box h2 {
+    color: #38bdf8;
+    margin-top: 0;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+}
+
+.auth-box p, .register-box p {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    margin-bottom: 20px;
+}
+
+/* input fields */
+input[type="email"], 
+input[type="password"], 
+input[type="text"] {
+    width: 100%;
+    padding: 14px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border: 1px solid #475569;
+    background-color: #0f172a;
+    color: #ffffff;
+    box-sizing: border-box;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+input:focus {
+    outline: none;
+    border-color: #38bdf8;
+    box-shadow: 0 0 5px rgba(56, 189, 248, 0.3);
+}
+
+/* button layout */
+button {
+    width: 100%;
+    padding: 14px;
+    background-color: #0284c7;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.05rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-top: 20px;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+button:hover {
+    background-color: #0369a1;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+/* error text */
+.error-text {
+    color: #ef4444 !important; /* 警告红 */
+    font-weight: bold;
+    margin-top: 15px;
+    min-height: 20px;
+}
+
+/* ── Password strength indicator ─────────────────────────── */
+/*
+ * Displayed below the password field in real-time as the user types.
+ * Criteria based on NIST SP 800-63B §5.1.1.2 and the OWASP
+ * Authentication Cheat Sheet (2023).
+ */
+.pw-strength-box {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin: 6px 0 10px 0;
+    text-align: left;
+}
+
+/* Eye icon button next to password fields */
+.pw-toggle-btn {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    font-size: 1em;
+    padding: 4px 6px;
+    width: auto;
+    margin: 0;
+}
+
+.pw-toggle-btn:hover {
+    color: #94a3b8;
+    background: transparent;
+}
+
+/* scenario selection */
+.scenario-select {
+    text-align: left;
+    margin: 20px 0;
+    background-color: #0f172a;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #475569;
+}
+
+.scenario-select label {
+    display: block;
+    margin: 8px 0;
+    cursor: pointer;
+    color: #cbd5e1;
+}
+
+.scenario-select input[type="radio"] {
+    margin-right: 10px;
+    accent-color: #38bdf8;
+}

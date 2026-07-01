@@ -1,0 +1,560 @@
+/* css/style.css - Sentinel-Eye Main Layout */
+
+/* =========================================
+   1. Reset
+   ========================================= */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #0f172a; /* Geek Dark Blue */
+    color: #f8fafc;
+    height: 100vh;
+    overflow: hidden; /* avoid scrolling on the main page */
+}
+
+/* =========================================
+   2. Overall Layout
+   ========================================= */
+.dashboard-container {
+    display: flex; /* seperate sidebar and main content on left right */
+    height: 100vh; 
+    width: 100vw;
+}
+
+#sidebar-container {
+    height: 100%;
+    /* 我们不在这里设宽度，宽度在 .sidebar 里面设 */
+}
+
+.main-content {
+    flex: 1; /* occupy the remaining space */
+    padding: 40px;
+    overflow-y: auto; /* 内容多了允许上下滚动 */
+    background: radial-gradient(circle at top right, #1e293b 0%, #0f172a 100%);
+}
+
+/* =========================================
+   3. Sidebar Component
+   ========================================= */
+.sidebar {
+    width: 260px;
+    height: 100%;
+    background-color: #1e293b;
+    border-right: 1px solid #334155;
+    display: flex;
+    flex-direction: column; /* 让头部、菜单、底部上下排列 */
+    box-shadow: 4px 0 15px rgba(0, 0, 0, 0.3);
+}
+
+.sidebar-header {
+    padding: 30px 20px;
+    text-align: center;
+    border-bottom: 1px solid #334155;
+}
+
+.sidebar-header h2 {
+    color: #38bdf8; /* 科技蓝 */
+    font-size: 1.5rem;
+    letter-spacing: 1px;
+    margin-bottom: 5px;
+}
+
+.sidebar-header .subtitle {
+    color: #94a3b8;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.nav-links {
+    list-style: none;
+    padding: 20px 0;
+    flex: 1; /* 自动撑开，把 Footer 挤到最下面 */
+}
+
+.nav-links li {
+    margin-bottom: 5px;
+}
+
+.nav-links a {
+    display: flex;
+    align-items: center;
+    padding: 15px 25px;
+    color: #cbd5e1;
+    text-decoration: none;
+    font-weight: 500;
+    border-left: 4px solid transparent; /* 默认没有左边框 */
+    transition: all 0.3s ease;
+}
+
+/* mouse hover & active states */
+.nav-links a:hover, 
+.nav-links a.active {
+    background-color: #0f172a;
+    color: #38bdf8;
+    border-left: 4px solid #38bdf8;
+}
+
+.sidebar-footer {
+    padding: 20px;
+    border-top: 1px solid #334155;
+}
+
+.logout-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #1e293b;
+    color: #ef4444; /* 警告红 */
+    border: 1px solid #ef4444;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.logout-btn:hover {
+    background-color: #ef4444;
+    color: white;
+}
+
+/* =========================================
+   4. Dashboard card
+   ========================================= */
+h1 {
+    color: #f8fafc;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #334155;
+    padding-bottom: 10px;
+    display: inline-block;
+}
+
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 0px;
+    margin-bottom: 30px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+/* alert grid layout */
+.alert-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+}
+
+/* alert card */
+.alert-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    overflow: hidden;
+    border-left: 5px solid #ef4444; /* 醒目的红色警报边框 */
+    transition: transform 0.2s;
+}
+
+.alert-card:hover {
+    transform: translateY(-5px);
+}
+
+.evidence-img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background-color: #e2e8f0;
+}
+
+.card-content {
+    padding: 15px;
+    color: #334155;
+}
+
+
+.violation-type {
+    color: #ef4444;
+    font-weight: bold;
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+}
+
+.confidence-bar-container {
+    width: 100%;
+    background-color: #e2e8f0;
+    border-radius: 4px;
+    margin-top: 10px;
+    height: 8px;
+}
+
+.confidence-bar {
+    height: 100%;
+    background-color: #10b981;
+    border-radius: 4px;
+}
+
+.live-dot {
+    height: 10px;
+    width: 10px;
+    background-color: #10b981;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* =========================================
+   5. (Toast Alert)-upper right corner pop-up style
+   ========================================= */
+/* upper right corner pop-up container */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* pop-up */
+.toast-alert {
+    background-color: #ef4444; /* 警报红 */
+    color: white;
+    padding: 15px 25px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    font-weight: bold;
+    transform: translateX(120%);
+    animation: slideIn 0.5s forwards, slideOut 0.5s forwards 4s; /* 4秒后自动消失 */
+}
+
+@keyframes slideIn {
+    to { transform: translateX(0); }
+}
+@keyframes slideOut {
+    to { transform: translateX(120%); opacity: 0; }
+}
+
+/* =========================================
+   6. 赛博朋克双栏布局 (New Double-Column Layout)
+   ========================================= */
+
+.dashboard-grid {
+    display: flex;
+    gap: 30px; /* 两栏之间的间距 */
+    height: calc(100vh - 120px); /* 减去 header 的高度，撑满屏幕 */
+}
+
+/* 统一的面板风格 */
+.panel-box {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-box h2 {
+    color: #f8fafc;
+    font-size: 1.2rem;
+    margin-bottom: 20px;
+    border-bottom: 1px solid #334155;
+    padding-bottom: 10px;
+}
+
+/* 左侧：视频直播区 (占比较大) */
+.live-video-section {
+    flex: 2; /* 占据 2/3 的宽度 */
+}
+
+.video-container {
+    flex: 1; /* 让视频框填满剩余高度 */
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    border: 2px solid #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.video-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 保证视频填满整个框且不严重变形 */
+}
+
+.camera-info {
+    margin-top: 15px;
+    display: flex;
+    justify-content: space-between;
+    color: #94a3b8;
+    font-size: 0.9rem;
+    padding: 10px;
+    background-color: #0f172a;
+    border-radius: 6px;
+}
+
+/* 右侧：警报历史区 (占比较小) */
+.alert-history-section {
+    flex: 1; /* 占据 1/3 的宽度 */
+    min-width: 320px; /* 防止屏幕太小时被挤到看不见 */
+}
+
+/* 改写原来的 alert-grid 为垂直列表 */
+.alert-list {
+    flex: 1;
+    overflow-y: auto; /* 历史记录多了可以往下滚动 */
+    padding-right: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+/* 自定义滚动条 (更具科技感) */
+.alert-list::-webkit-scrollbar {
+    width: 6px;
+}
+.alert-list::-webkit-scrollbar-track {
+    background: #0f172a; 
+}
+.alert-list::-webkit-scrollbar-thumb {
+    background: #38bdf8; 
+    border-radius: 3px;
+}
+
+/* =========================================
+   7. 违规卡片暗黑主题覆盖 (Overriding old .alert-card)
+   ========================================= */
+/* 因为你原来的卡片是白色的，放在深色背景很突兀，所以这里我们把它覆盖成暗色系 */
+
+.alert-card {
+    background: #0f172a; /* 改为深色背景 */
+    border: 1px solid #334155;
+    border-left: 4px solid #ef4444; /* 依然保留红色左边框 */
+    display: flex; /* 改成左右结构：左边照片，右边文字 */
+    flex-direction: row;
+    height: 120px; /* 固定高度让列表更整齐 */
+    /* === 🌟 修复压扁的核心代码 === */
+    height: 120px; 
+    min-height: 120px; /* 强制最低高度 */
+    flex-shrink: 0;    /* 严禁 Flexbox 压缩它！ */
+}
+
+.evidence-img {
+    width: 100px; /* 照片缩小 */
+    height: 100%;
+    object-fit: cover;
+    border-right: 1px solid #334155;
+}
+
+.card-content {
+    padding: 12px;
+    color: #cbd5e1; /* 文字改为浅灰色 */
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.violation-type {
+    font-size: 1rem;
+    margin-bottom: 4px;
+}
+
+/* =========================================
+   8. Roster.html — Table Layout
+   ========================================= */
+.roster-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border-radius: 10px;
+    border: 1px solid #334155;
+}
+
+.roster-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9em;
+    color: #e2e8f0;
+}
+
+.roster-table thead tr {
+    background: #0f172a;
+    text-align: left;
+}
+
+.roster-table thead th {
+    padding: 12px 16px;
+    color: #64748b;
+    font-weight: 600;
+    font-size: 0.8em;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid #334155;
+    white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+}
+
+.roster-table thead th:hover { color: #38bdf8; }
+
+.roster-table tbody tr {
+    background: #1e293b;
+    border-bottom: 1px solid #1e293b;
+    transition: background 0.15s;
+}
+
+.roster-table tbody tr:hover { background: #263349; }
+
+/* Row status left-border accent */
+.roster-table tbody tr.status-green  { border-left: 3px solid #10b981; }
+.roster-table tbody tr.status-yellow { border-left: 3px solid #f59e0b; }
+.roster-table tbody tr.status-red    { border-left: 3px solid #ef4444; }
+
+.roster-table td {
+    padding: 11px 16px;
+    vertical-align: middle;
+}
+
+/* Score pill */
+.score-pill {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 20px;
+    font-weight: bold;
+    font-size: 0.95em;
+}
+.score-pill.green  { background: rgba(16,185,129,0.15); color: #10b981; }
+.score-pill.yellow { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+.score-pill.red    { background: rgba(239,68,68,0.15);   color: #ef4444; }
+
+/* Status chip */
+.status-chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.78em;
+    font-weight: 600;
+    white-space: nowrap;
+}
+.status-chip.good       { background: rgba(16,185,129,0.15); color: #10b981; }
+.status-chip.warning    { background: rgba(245,158,11,0.15);  color: #f59e0b; }
+.status-chip.danger     { background: rgba(239,68,68,0.15);   color: #ef4444; }
+.status-chip.suspended  { background: #7f1d1d; color: #fca5a5; }
+
+/* Badge chips inside table */
+.badge-chip-sm {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 10px;
+    font-size: 0.72em;
+    margin: 1px 2px;
+    white-space: nowrap;
+}
+.badge-chip-sm.gold    { background: #854d0e; color: #fef08a; }
+.badge-chip-sm.safe    { background: rgba(16,185,129,0.2); color: #10b981; }
+.badge-chip-sm.repeat  { background: #7f1d1d; color: #fca5a5; }
+
+/* Action buttons in table */
+.tbl-btn {
+    padding: 5px 11px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.78em;
+    font-weight: 600;
+    margin: 2px;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+}
+.tbl-btn:hover { opacity: 0.85; }
+.tbl-btn.archive  { background: #334155; color: #e2e8f0; }
+.tbl-btn.warning  { background: #ef4444; color: white; }
+
+/* Keep .filter-select used by header dropdowns */
+.filter-select {
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: white;
+    outline: none;
+    cursor: pointer;
+}
+.filter-select:hover { border-color: #38bdf8; }
+
+/* 简单的下拉菜单样式 (Simple dropdown styling) */
+.filter-select {
+    padding: 10px 15px;
+    border-radius: 20px;
+    border: 1px solid #334155;
+    background: #1e293b;
+    color: white;
+    outline: none;
+    cursor: pointer;
+}
+.filter-select:hover { border-color: #38bdf8; }
+
+/* =========================================
+   9. Employee Management form inputs
+   ========================================= */
+.form-label {
+    display: block;
+    font-size: 0.78em;
+    color: #94a3b8;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+.form-input {
+    width: 100%;
+    padding: 9px 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 7px;
+    color: #e2e8f0;
+    font-size: 0.9em;
+    outline: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+}
+.form-input:focus  { border-color: #3b82f6; }
+.form-input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/*=========================================
+    Sidebar Export Button (侧边栏导出按钮)
+=========================================*/
+.export-btn {
+    width: 100%;
+    padding: 12px;
+    background-color: #38bdf8; /* 科技蓝 (Tech Blue) */
+    color: #0f172a;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    margin-bottom: 15px; /* 和下面的登出按钮保持距离 */
+    transition: all 0.3s ease;
+}
+
+.export-btn:hover {
+    background-color: #0ea5e9;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+}

@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sentinel-Eye | My Safety Profile</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/employee.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- QR code generator for TOTP enrollment (cdnjs — more reliable than jsdelivr) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <!-- TOTP verification is handled via Web Crypto API in employee.js (no external lib needed) -->
+</head>
+<body>
+<div class="emp-page">
+
+    <!-- Hidden until data loads -->
+    <div id="loading-msg">Loading your safety profile...</div>
+
+    <div id="emp-content" style="display:none;">
+
+        <!-- ── Sticky top bar ──────────────────────────────────────────────── -->
+        <div class="emp-topbar">
+            <div class="emp-topbar-left">
+                <h1>My Safety Profile</h1>
+                <span id="emp-sub">Sentinel-Eye Employee Portal</span>
+            </div>
+
+            <!-- Large gold badge — shown only when employee has earned it -->
+            <div id="gold-badge-display" class="gold-badge-hero" style="display:none;">
+                <div class="gold-badge-medal"></div>
+                <div class="gold-badge-label">
+                    <div class="gold-badge-title">Gold Badge</div>
+                    <div class="gold-badge-sub">30-Day Clean Record</div>
+                </div>
+            </div>
+
+            <button class="btn-logout" onclick="handleLogout()">Logout</button>
+        </div>
+
+        <!-- ── Stat cards (always visible) ───────────────────────────────── -->
+        <div class="emp-stats">
+            <div class="emp-stat-card">
+                <div class="label">Safety Score</div>
+                <div class="value score-big" id="emp-score" style="color:#10b981;">—</div>
+                <div style="font-size:0.75em; color:#64748b; margin-top:4px;">/ 100 pts</div>
+            </div>
+            <div class="emp-stat-card">
+                <div class="label">Total Violations</div>
+                <div class="value" id="emp-violations" style="color:#ef4444;">—</div>
+            </div>
+            <div class="emp-stat-card">
+                <div class="label">Reward Points</div>
+                <div class="value" id="emp-rewards" style="color:#a78bfa;">—</div>
+            </div>
+            <div class="emp-stat-card">
+                <div class="label">Employee ID</div>
+                <div class="value" id="emp-id" style="font-size:1.1em; color:#94a3b8; margin-top:8px;">—</div>
+            </div>
+        </div>
+
+        <!-- Status / badge chips (always visible, below stat cards) -->
+        <div class="emp-badges" id="emp-badges"></div>
+
+        <!-- ── Tab navigation ─────────────────────────────────────────────── -->
+        <div class="emp-tabs">
+            <button class="emp-tab active" data-tab="overview" onclick="switchTab('overview', this)">
+                Overview
+            </button>
+            <button class="emp-tab" data-tab="rewards" onclick="switchTab('rewards', this)">
+                Rewards
+            </button>
+            <button class="emp-tab" data-tab="violations" onclick="switchTab('violations', this)">
+                Violations
+            </button>
+            <button class="emp-tab" data-tab="security" onclick="switchTab('security', this)">
+                Security
+            </button>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             TAB: Overview
+             Shows a mini 7-day trend so the employee knows their recent activity.
+             Reference: ISO 45001:2018 Clause 5.4 — worker participation.
+        ══════════════════════════════════════════════════════════════════ -->
+        <div id="tab-overview" class="emp-tab-panel">
+
+            <!-- 7-day mini trend -->
+            <div class="emp-section">
+                <div class="chart-filter-bar">
+                    <h3>Last 7 Days — Violation Trend</h3>
+                </div>
+                <div style="position:relative; height:200px;">
+                    <canvas id="miniTrendChart"></canvas>
+                </div>
+                <p id="mini-trend-no-data" style="display:none; color:#94a3b8; text-align:center; padding:20px;">
+                    No violations in the last 7 days — keep it up!
+                </p>
+            </div>
+
+            <!-- Safety tips / ISO reference -->
+            <div class="emp-section">
+                <h3>Safety Compliance Reminder</h3>
+                <div style="font-size:0.85em; color:#94a3b8; line-height:1.8;">
+                    <div style="margin-bottom:8px;">
+                        <span style="color:#10b981; font-weight:bold;">Helmet</span> — Must be worn at all times on site.
+                        <span style="color:#64748b;">(OSHA 1926.100 / ISO 45001 Clause 8.1)</span>
+                    </div>
+                    <div style="margin-bottom:8px;">
+                        <span style="color:#10b981; font-weight:bold;">Safety Vest</span> — High-visibility vest required in all active zones.
+                        <span style="color:#64748b;">(OSHA 1926.201 / ISO 45001 Clause 8.1)</span>
+                    </div>
+                    <div>
+                        <span style="color:#f59e0b; font-weight:bold;">Violation</span> — Each detection deducts 15 safety score points and 5 reward points.
+                        <span style="color:#64748b;">(OWASP Risk Rating 2021 — Medium Severity)</span>
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /tab-overview -->
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             TAB: Rewards
+             Reference: ISO 45001:2018 Clause 10.3 — continual improvement
+             through positive reinforcement of safe behaviour.
+        ══════════════════════════════════════════════════════════════════ -->
+        <div id="tab-rewards" class="emp-tab-panel" style="display:none;">
+
+            <div class="emp-section">
+                <h3>My Rewards & Recognition</h3>
+
+                <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px;">
+                    <div style="font-size:3em; font-weight:bold; color:#a78bfa;" id="reward-display">0</div>
+                    <div>
+                        <div style="color:#cbd5e1; font-weight:bold;">Reward Points</div>
+                        <div style="font-size:0.8em; color:#64748b;">Earned by completing violation-free months</div>
+                    </div>
+                </div>
+
+                <!-- Progress bar toward next milestone -->
+                <div style="font-size:0.8em; color:#94a3b8; margin-bottom:4px;">
+                    Progress to next milestone: <span id="reward-next-label">—</span>
+                </div>
+                <div class="reward-progress-track">
+                    <div class="reward-progress-fill" id="reward-bar" style="width:0%;"></div>
+                </div>
+
+                <!-- Milestone chips -->
+                <div class="reward-milestones" id="reward-milestones"></div>
+
+                <!-- How to earn -->
+                <div style="margin-top:16px; padding:12px; background:#0f172a; border-radius:8px; font-size:0.82em; color:#94a3b8; line-height:1.7;">
+                    <strong style="color:#cbd5e1;">How points are awarded:</strong><br>
+                    +10 pts — Complete a full calendar month with zero violations<br>
+                    Gold Badge — 30 consecutive days with no violations<br>
+                    Safe Worker — Sustained compliance record recognised by HR<br>
+                    <span style="color:#64748b;">Points are calculated automatically on the 1st of each month.
+                    (Reference: ISO 45001:2018 Clause 10.3 — continual improvement)</span>
+                </div>
+            </div>
+
+        </div><!-- /tab-rewards -->
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             TAB: Violations
+             Reference: ISO 45001:2018 Clause 9.1 — individual performance monitoring
+             Malaysia PDPA 2010 — employees' right to access their own records
+        ══════════════════════════════════════════════════════════════════ -->
+        <div id="tab-violations" class="emp-tab-panel" style="display:none;">
+
+            <!-- Full trend chart with filters -->
+            <div class="emp-section">
+                <div class="chart-filter-bar">
+                    <h3>My Violation Trend</h3>
+                    <select id="trend-type-filter" class="chart-filter-select" onchange="applyTrendFilter()">
+                        <option value="all">All Types</option>
+                        <option value="No Helmet">No Helmet</option>
+                        <option value="No Vest">No Vest</option>
+                        <option value="No Helmet &amp; No Vest">No Helmet &amp; No Vest</option>
+                    </select>
+                </div>
+                <div id="trend-date-filters" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:14px;">
+                    <button class="trend-date-btn" data-days="7"   onclick="applyTrendFilter(this)">Last 7 Days</button>
+                    <button class="trend-date-btn" data-days="30"  onclick="applyTrendFilter(this)">Last 30 Days</button>
+                    <button class="trend-date-btn active" data-days="90"  onclick="applyTrendFilter(this)">Last 90 Days</button>
+                    <button class="trend-date-btn" data-days="all" onclick="applyTrendFilter(this)">All Time</button>
+                </div>
+                <div style="position:relative; height:220px;">
+                    <canvas id="empTrendChart"></canvas>
+                </div>
+                <p id="trend-no-data" style="display:none; color:#94a3b8; text-align:center; padding:20px;">
+                    No violations recorded for this filter — keep it up!
+                </p>
+            </div>
+
+            <!-- Breakdown doughnut -->
+            <div class="emp-section" id="breakdown-section">
+                <h3>Violation Breakdown (All Time)</h3>
+                <div style="position:relative; height:200px; max-width:300px; margin:0 auto;">
+                    <canvas id="empTypeChart"></canvas>
+                </div>
+                <p id="breakdown-no-data" style="display:none; color:#94a3b8; text-align:center; padding:20px;">
+                    No violation data to display.
+                </p>
+            </div>
+
+            <!-- Violation evidence archive -->
+            <div class="emp-section">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                    <h3 style="margin:0;">My Violation Archive</h3>
+                    <select id="emp-type-filter" class="chart-filter-select" onchange="renderPhotos()">
+                        <option value="all">All Types</option>
+                        <option value="No Helmet">No Helmet</option>
+                        <option value="No Vest">No Vest</option>
+                        <option value="No Helmet &amp; No Vest">No Helmet &amp; No Vest</option>
+                    </select>
+                </div>
+                <div id="emp-photo-grid" class="emp-photo-grid">
+                    <p style="color:#94a3b8; grid-column:1/-1;">No photos found.</p>
+                </div>
+            </div>
+
+        </div><!-- /tab-violations -->
+
+        <!-- ══════════════════════════════════════════════════════════════════
+             TAB: Security — Google Authenticator TOTP Setup
+             Reference: RFC 6238 (TOTP), NIST SP 800-63B §5.1.4
+             Provides "something you have" second factor for login.
+             The TOTP secret is generated client-side using CSPRNG (Web Crypto API)
+             and stored in the employee's Firestore document.
+        ══════════════════════════════════════════════════════════════════ -->
+        <div id="tab-security" class="emp-tab-panel" style="display:none;">
+
+            <!-- TOTP Status card -->
+            <div class="emp-section">
+                <h3>Two-Factor Authentication (Google Authenticator)</h3>
+                <p style="font-size:0.85em; color:#94a3b8; line-height:1.7; margin-bottom:16px;">
+                    Add an extra layer of security to your account. After enabling, you will need to enter
+                    a 6-digit code from Google Authenticator each time you log in.<br>
+                    <span style="color:#64748b; font-size:0.9em;">
+                        (RFC 6238 — TOTP Standard · NIST SP 800-63B §5.1.4 — Authenticator Assurance Level 2)
+                    </span>
+                </p>
+
+                <!-- Current status -->
+                <div id="totp-status-box" style="background:#0f172a; border:1px solid #334155;
+                     border-radius:8px; padding:14px 18px; margin-bottom:20px; display:flex;
+                     align-items:center; gap:14px; flex-wrap:wrap;">
+                    <div id="totp-status-icon" style="font-size:2em;"></div>
+                    <div>
+                        <div id="totp-status-label" style="font-weight:bold; color:#ef4444;">
+                            2FA Not Enabled
+                        </div>
+                        <div id="totp-status-sub" style="font-size:0.8em; color:#64748b;">
+                            Your account is protected by password only.
+                        </div>
+                    </div>
+                    <div style="margin-left:auto;">
+                        <button id="totp-action-btn" onclick="initTotpSetup()"
+                                style="padding:8px 20px; background:#3b82f6; color:white;
+                                       border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85em;">
+                            Enable 2FA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Setup flow — hidden until "Enable 2FA" is clicked -->
+                <div id="totp-setup-flow" style="display:none;">
+
+                    <!-- Step 1: QR Code -->
+                    <div id="totp-step-1">
+                        <div style="font-size:0.85em; color:#cbd5e1; margin-bottom:12px;">
+                            <strong>Step 1:</strong> Scan this QR code with
+                            <strong style="color:#38bdf8;">Google Authenticator</strong>
+                            (or Authy / Microsoft Authenticator):
+                        </div>
+                        <div style="text-align:center; margin-bottom:16px;">
+                            <div id="totp-qr-div"
+                                 style="display:inline-block; padding:10px; background:#ffffff;
+                                        border-radius:10px; border:3px solid #334155;"></div>
+                        </div>
+                        <div style="background:#0f172a; border-radius:8px; padding:10px 14px; margin-bottom:16px;
+                                    font-size:0.78em; color:#94a3b8; word-break:break-all;">
+                            Manual key (if QR fails):
+                            <strong id="totp-manual-key" style="color:#38bdf8; letter-spacing:2px;"></strong>
+                        </div>
+                        <div style="font-size:0.85em; color:#cbd5e1; margin-bottom:8px;">
+                            <strong>Step 2:</strong> Enter the 6-digit code from the app to confirm setup:
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:flex-start; flex-wrap:wrap;">
+                            <input type="text" id="totp-confirm-code"
+                                   placeholder="Enter 6-digit code"
+                                   maxlength="6" pattern="\d{6}"
+                                   style="flex:1; min-width:160px; padding:10px 14px; background:#0f172a;
+                                          border:1px solid #334155; border-radius:8px; color:white;
+                                          letter-spacing:6px; font-size:1.1em; text-align:center; outline:none;">
+                            <button onclick="confirmTotpSetup()"
+                                    style="padding:10px 20px; background:#10b981; color:white;
+                                           border:none; border-radius:8px; cursor:pointer; font-weight:bold; font-size:0.85em;">
+                                Verify &amp; Enable
+                            </button>
+                        </div>
+                        <p id="totp-setup-error" style="color:#ef4444; font-size:0.82em; margin-top:8px; min-height:16px;"></p>
+                    </div>
+
+                </div><!-- /totp-setup-flow -->
+
+                <!-- Disable TOTP — shown only when 2FA is active -->
+                <div id="totp-disable-section" style="display:none; margin-top:8px;">
+                    <button onclick="disableTotp()"
+                            style="padding:8px 18px; background:#7f1d1d; color:#fca5a5;
+                                   border:1px solid #ef4444; border-radius:8px; cursor:pointer;
+                                   font-size:0.82em;">
+                        Disable 2FA
+                    </button>
+                    <span style="color:#64748b; font-size:0.75em; margin-left:8px;">
+                        (Not recommended — reduces account security)
+                    </span>
+                </div>
+
+            </div><!-- /emp-section -->
+
+            <!-- How TOTP works info box -->
+            <div class="emp-section">
+                <h3>ℹHow Google Authenticator Works</h3>
+                <div style="font-size:0.83em; color:#94a3b8; line-height:1.8;">
+                    <div style="margin-bottom:6px;">A <strong style="color:#e2e8f0;">secret key</strong> is shared once between your account and the app.</div>
+                    <div style="margin-bottom:6px;">Every <strong style="color:#e2e8f0;">30 seconds</strong>, a new 6-digit code is generated using that key + the current time.</div>
+                    <div style="margin-bottom:6px;">Only someone with your phone can generate the correct code — even if your password is stolen.</div>
+                    <div style="color:#64748b; font-size:0.9em;">
+                        Standard: RFC 6238 (TOTP) · NIST SP 800-63B §5.1.4 · ISO 27001 Annex A.9.4
+                    </div>
+                </div>
+            </div>
+
+        </div><!-- /tab-security -->
+
+    </div><!-- end #emp-content -->
+</div><!-- end .emp-page -->
+
+<!-- ── Training Required Modal ────────────────────────────────────────────────
+     Shown on portal load when employee's safety score drops below 70 within
+     the current calendar month.
+     Reference: ISO 45001:2018 Clause 7.2 — Competence & Training
+──────────────────────────────────────────────────────────────────────────── -->
+<div id="training-modal" style="display:none; position:fixed; inset:0; z-index:9999;
+     background:rgba(2,6,23,0.92); justify-content:center; align-items:center;">
+    <div style="background:#1e293b; border:2px solid #f59e0b; border-radius:14px;
+                padding:36px 32px; max-width:460px; width:90%; text-align:center;
+                box-shadow:0 0 60px rgba(245,158,11,0.25);">
+
+        <div style="font-size:3em; margin-bottom:12px;"></div>
+
+        <h2 style="color:#f59e0b; margin:0 0 8px 0; font-size:1.3em;">
+            Safety Training Required
+        </h2>
+
+        <p style="color:#94a3b8; font-size:0.88em; margin:0 0 20px 0;">
+            Your safety score for <strong id="training-month" style="color:#e2e8f0;"></strong>
+            has dropped to <strong id="training-score" style="color:#ef4444;"></strong>
+            due to <strong id="training-count" style="color:#ef4444;"></strong>
+            violation(s) this month.
+        </p>
+
+        <div style="background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3);
+                    border-radius:10px; padding:16px; margin-bottom:24px; text-align:left;">
+            <div style="color:#fcd34d; font-weight:bold; font-size:0.85em; margin-bottom:10px;">
+                Required Action
+            </div>
+            <div style="color:#e2e8f0; font-size:0.83em; line-height:1.7;">
+                You are required to attend a <strong>Safety Awareness Training</strong> session.<br><br>
+                <strong>Venue:</strong> Training Room, Block A Level 2<br>
+                <strong>Schedule:</strong> Please report to HR to confirm your session date<br>
+                <strong>Contact:</strong> Safety Officer — Ext. 1023
+            </div>
+        </div>
+
+        <div style="color:#64748b; font-size:0.75em; margin-bottom:20px;">
+            Reference: ISO 45001:2018 Clause 7.2 — Competence &amp; Training
+        </div>
+
+        <button onclick="closeTrainingModal()"
+                style="padding:10px 28px; background:#f59e0b; color:#000; font-weight:bold;
+                       border:none; border-radius:8px; cursor:pointer; font-size:0.9em;">
+            I Understand — Close
+        </button>
+    </div>
+</div>
+
+<script type="module" src="../js/employee.js"></script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sentinel-Eye | Employee Registration</title>
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="../css/auth.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <div id="sidebar-container"></div>
+
+        <div class="auth-container" style="align-items:flex-start; padding:30px 0; overflow-y:auto;">
+            <div class="register-box">
+                <h2>Employee Onboarding Registration</h2>
+                <p>Create a new employee account. The initial password must meet our security policy.</p>
+
+                <form id="register-form">
+                    <input type="text" id="reg-name" placeholder="Employee Name (e.g., Wei Liang)" required>
+                    <input type="email" id="reg-email" placeholder="Email Address" required autocomplete="off">
+
+                    <!-- Password field with strength indicator -->
+                    <!--
+                        Password policy — NIST SP 800-63B §5.1.1.2 + OWASP Authentication Cheat Sheet (2023):
+                        • Minimum 8 characters
+                        • At least one uppercase letter (A-Z)
+                        • At least one lowercase letter (a-z)
+                        • At least one digit (0-9)
+                        • At least one special character (@$!%*?&_#-)
+                        • Maximum 64 characters (prevents DoS from very long inputs)
+                        Storage: Firebase Auth hashes all passwords with scrypt (memory-hard KDF),
+                        satisfying NIST SP 800-132 requirements — no plaintext storage.
+                    -->
+                    <div style="position:relative;">
+                        <input type="password" id="reg-password"
+                               placeholder="Set Initial Password"
+                               autocomplete="new-password"
+                               oninput="checkPwStrength('reg-password', 'reg-pw-strength')"
+                               required>
+                        <button type="button"
+                                onclick="togglePwVisibility('reg-password', this)"
+                                class="pw-toggle-btn">&#128065;</button>
+                    </div>
+                    <div id="reg-pw-strength" class="pw-strength-box" style="display:none;"></div>
+
+                    <div style="position:relative;">
+                        <input type="password" id="reg-password-confirm"
+                               placeholder="Confirm Password"
+                               autocomplete="new-password"
+                               required>
+                        <button type="button"
+                                onclick="togglePwVisibility('reg-password-confirm', this)"
+                                class="pw-toggle-btn">&#128065;</button>
+                    </div>
+
+                    <div class="scenario-select">
+                        <p>Select Registration Mode:</p>
+                        <label>
+                            <input type="radio" name="scenario" value="A" checked>
+                            Scenario A (Remote/Manual Photo Upload)
+                        </label><br>
+                        <label>
+                            <input type="radio" name="scenario" value="B">
+                            Scenario B (On-site Registration with Camera)
+                        </label>
+                    </div>
+
+                    <p id="reg-error" style="color:#ef4444; font-size:0.83em; min-height:18px; text-align:left; margin:4px 0 0 0;"></p>
+                    <button type="submit" id="submit-btn">Complete Registration</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <!-- ── Scenario B: Photo Countdown Overlay ──────────────────────────────────
+         Shown after registration so the new employee has time to prepare
+         before the camera captures their face for face recognition.
+    ─────────────────────────────────────────────────────────────────────────── -->
+    <div id="countdown-overlay" style="display:none; position:fixed; inset:0; z-index:9999;
+         background:rgba(2,6,23,0.96); flex-direction:column;
+         justify-content:center; align-items:center; text-align:center;">
+
+        <div style="background:#052e16; border:1px solid #10b981; border-radius:8px;
+                    padding:10px 20px; margin-bottom:20px; font-size:0.85em; color:#6ee7b7;">
+            Registration successful — camera capture in progress
+        </div>
+
+        <div style="font-size:1.1em; color:#38bdf8; font-weight:bold; margin-bottom:10px;
+                    letter-spacing:2px; text-transform:uppercase;">
+            Get Ready for Face Capture
+        </div>
+
+        <div id="countdown-name"
+             style="font-size:1em; color:#94a3b8; margin-bottom:32px;"></div>
+
+        <!-- Big countdown number -->
+        <div id="countdown-number"
+             style="font-size:9em; font-weight:900; color:#38bdf8; line-height:1;
+                    text-shadow:0 0 40px rgba(56,189,248,0.6);
+                    transition:transform 0.15s ease, opacity 0.15s ease;">
+            5
+        </div>
+
+        <div style="margin-top:24px; font-size:0.9em; color:#64748b;">
+            Look directly at the camera.<br>
+            Photo will be taken automatically.
+        </div>
+
+        <div style="margin-top:28px; width:280px; height:6px;
+                    background:#1e293b; border-radius:99px; overflow:hidden;">
+            <div id="countdown-bar"
+                 style="height:100%; width:100%; background:#38bdf8; border-radius:99px;
+                        transition:width 1s linear;"></div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/login.js"></script>
+    <script type="module" src="../js/register.js"></script>
+    <script type="module" src="../js/sidebar.js"></script>
+</body>
+</html>

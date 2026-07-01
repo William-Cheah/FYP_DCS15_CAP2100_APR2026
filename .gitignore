@@ -1,0 +1,13 @@
+# Secrets — NEVER commit these to GitHub
+firebase_key.json
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+env/
+.venv/

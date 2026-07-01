@@ -1,0 +1,32 @@
+# Sentinel-Eye — Python Dependencies
+# Install with: pip install -r requirements.txt
+#
+# Note: PyTorch (torch, torchvision, torchaudio) should be installed separately
+# with the correct CUDA version for your GPU. See: https://pytorch.org/get-started/locally/
+# Example (CUDA 11.8):
+#   pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+
+# ── AI / Computer Vision ───────────────────────────────────────────────────────
+ultralytics              # YOLOv8 object detection (PPE detection)
+face_recognition         # HOG-based face recognition (dlib backend)
+opencv-python            # Camera capture and frame processing
+
+# ── Web Framework ──────────────────────────────────────────────────────────────
+flask                    # Backend API server and MJPEG stream server
+flask-cors               # Cross-origin requests from frontend JS
+
+# ── Firebase / Database ────────────────────────────────────────────────────────
+firebase-admin           # Firestore read/write, Firebase Auth Admin SDK
+
+# ── Email ─────────────────────────────────────────────────────────────────────
+# Uses Python built-in smtplib — no extra install needed
+
+# ── OTP / TOTP (MFA) ──────────────────────────────────────────────────────────
+pyotp                    # RFC 6238 TOTP for Google Authenticator support
+qrcode[pil]              # QR code generation for TOTP setup
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv            # Loads .env file (IMGBB_API_KEY)
+requests                 # HTTP requests (ImgBB image upload)
+numpy                    # Array operations (face encoding distance calculation)
+Pillow                   # Image processing (used by qrcode and face_recognition)
